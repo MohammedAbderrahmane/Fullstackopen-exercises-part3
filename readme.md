@@ -1,0 +1,1 @@
+- The website is deployed using [Render](https://render.com/) , you can check it out [here](https://fullstackopen-exercises-part3.onrender.com) 
