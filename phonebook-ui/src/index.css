@@ -1,0 +1,11 @@
+.failNotification {
+    border: solid 5px red;
+    color: red;
+    padding: 5px;
+}
+
+.successNotification {
+    border: solid 5px green;
+    color: green;
+    padding: 5px;
+}
