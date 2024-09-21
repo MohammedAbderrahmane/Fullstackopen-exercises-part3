@@ -1,6 +1,11 @@
+const dotenv = require("dotenv");
+dotenv.config();
+
+const mongoose = require("mongoose");
 const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
+const Person = require("./models/Person");
 
 const PORT = process.env.PORT || 3000;
 
@@ -13,83 +18,94 @@ app.use(express.static("dist"));
 morgan.token("body", (req, res) => JSON.stringify(req.body));
 app.use(morgan(":method :url :body :status [:response-time ms]"));
 
-let persons = [
-  {
-    id: "1",
-    name: "Arto Hellas",
-    number: "040-123456",
-  },
-  {
-    id: "2",
-    name: "Ada Lovelace",
-    number: "39-44-5323523",
-  },
-  {
-    id: "3",
-    name: "Dan Abramov",
-    number: "12-43-234345",
-  },
-  {
-    id: "4",
-    name: "Mary Poppendieck",
-    number: "39-23-6423122",
-  },
-];
-
-app.get("/persons", (request, response) => {
-  response.json(persons);
+app.get("/persons", (request, response, next) => {
+  Person.find({})
+    .then((result) => {
+      if (!result) {
+        next({ message: "no people found" });
+        return;
+      }
+      response.json(result);
+    })
+    .catch((error) => {
+      next(error);
+    });
 });
 
-app.get("/persons/:id", (request, response) => {
+app.get("/persons/:id", (request, response, next) => {
   const id = request.params.id;
-  const person = persons.find((person) => person.id == id);
-  if (!person) {
-    response.status(404).end();
-    return;
-  }
-  response.json(person);
+  Person.findOne({ _id: id })
+    .then((result) => {
+      if (!result) {
+        next({ message: "person not found" });
+        return;
+      }
+      response.json(result);
+    })
+    .catch((error) => {
+      next(error);
+    });
 });
 
-app.delete("/persons/:id", (request, response) => {
+app.delete("/persons/:id", (request, response, next) => {
   const id = request.params.id;
-  persons = persons.filter((person) => person.id != id);
-  response.status(200).json({ id: id });
+  Person.findByIdAndDelete(id)
+    .then((result) => {
+      if (!result) return next({ message: "person already deleted" });
+      response.json({ id: id });
+    })
+    .catch((error) => {
+      next(error);
+    });
 });
 
-app.post("/persons", (request, response) => {
-  const newPerson = request.body;
+app.post("/persons", (request, response, next) => {
+  const newPerson = new Person({ ...request.body });
 
   if (!newPerson.name || !newPerson.number) {
-    response
-      .status(400)
-      .json({ message: "name/number of the person is missing !" });
+    next({ message: "name/number of the person is missing !" });
     return;
   }
 
-  const duplicatedPerson = persons.find(
-    (person) => person.name == newPerson.name
-  );
-  if (duplicatedPerson) {
-    response.status(400).json({ message: "person already exists !" });
-    return;
-  }
-
-  persons.push({
-    id: Math.floor(Math.random() * 100000).toString(),
-    ...newPerson,
-  });
-  response
-    .status(201)
-    .json({ id: Math.floor(Math.random() * 100000).toString(), ...newPerson });
+  Person.findOne({ name: newPerson.name })
+    .then((result) => {
+      if (result) next({ message: "person arleady exists" });
+      newPerson
+        .save()
+        .then((result) => response.json(result))
+        .catch((error) => next(error));
+    })
+    .catch((error) => next(error));
 });
 
-app.get("/info", (request, response) => {
-  const infoPage = `
-<h3>the Phonebook have ${persons.length} person</h3>
-<h4>${new Date().toUTCString()}</h4>
-`;
-  response.send(infoPage);
+app.put("/persons/:id", (request, response, next) => {
+  const id = request.params.id;
+  const person = request.body;
+
+  if (!person.name || !person.number)
+    return next({ message: "name/number of the person is missing !" });
+  Person.findByIdAndUpdate(id, person, { new: true })
+    .then((result) => {
+      response.json(result);
+    })
+    .catch((error) => next(error));
 });
+
+app.get("/info", async (request, response) => { 
+  Person.countDocuments()
+    .then((result) => {
+      const infoPage = `
+    <h3>the Phonebook have ${result} person</h3>
+    <h4>${new Date().toUTCString()}</h4>
+    `;
+      response.send(infoPage);
+    })
+    .catch((error) => next({ message: error }));
+});
+
+app.use((error, request, response, next) =>
+  response.status(400).send({ error: error.message })
+);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

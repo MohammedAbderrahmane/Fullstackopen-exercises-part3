@@ -1,3 +1,5 @@
 node_modules
 phonebook-ui/dist
 package-lock.json
+.env
+phonebook-ui/package-lock.json

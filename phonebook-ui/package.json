@@ -5,10 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm install && vite build",
+    "build": "vite build && cp -r dist ../",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "server": "json-server -p3001 --watch db.json"
+    "preview": "vite preview"
   },
   "dependencies": {
     "axios": "^1.7.7",
