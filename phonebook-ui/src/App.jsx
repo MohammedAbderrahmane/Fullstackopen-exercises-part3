@@ -10,6 +10,16 @@ const App = () => {
   const [filteredPersons, setFilteredPersons] = useState([]);
   const [errorMessage, setErrorMessage] = useState(null);
 
+  const setErrorNotification = ({ status, message }) => {
+    setErrorMessage({
+      status: status,
+      message: message,
+    });
+    setTimeout(() => {
+      setErrorMessage(null);
+    }, 3000);
+  };
+
   const getPersons = () => {
     service.get().then((data) => {
       setPersons(data);
@@ -17,7 +27,6 @@ const App = () => {
   };
 
   const addPerson = (event) => {
-    setErrorMessage("Adding Person ...");
     event.preventDefault();
     const personObject = { name: newName, number: newNumber };
 
@@ -28,86 +37,69 @@ const App = () => {
       );
       if (!canContinue) return;
 
-      service
-        .update(personObject, dublicatedPerson.id)
-        .then((data) => {
-          const tmpPersons = [...persons];
-          tmpPersons[tmpPersons.indexOf(dublicatedPerson)] = data;
-          setPersons(tmpPersons);
-          setNewName("");
-          setNewNumber("");
-          setErrorMessage({
-            status: "success",
-            message: `${newName}'s number was updated`,
-          });
-          setTimeout(() => {
-            setErrorMessage(null);
-          }, 2500);
-        })
-        .catch((error) => {
-          setErrorMessage({
-            status: "fail",
-            message: `failed to update ${newName}'s number`,
-          });
-          setTimeout(() => {
-            setErrorMessage(null);
-          }, 2500);
-        });
+      updatePerson(dublicatedPerson.id);
       return;
     }
 
-    service
-      .add(personObject)
-      .then((data) => {
-        setPersons(persons.concat(data));
-        setNewName("");
-        setNewNumber("");
-        setErrorMessage({
-          status: "success",
-          message: `${newName} was added to the phonebook`,
-        });
-        setTimeout(() => {
-          setErrorMessage(null);
-        }, 3000);
-      })
-      .catch((error) => {
-        setErrorMessage({
+    service.add(personObject).then((data) => {
+      if (data.error) {
+        return setErrorNotification({
           status: "fail",
-          message: `failed to add ${newName}`,
+          message: `failed to update ${newName}'s number : ${data.error}`,
         });
-        setTimeout(() => {
-          setErrorMessage(null);
-        }, 2500);
+      }
+      setPersons(persons.concat(data));
+      setNewName("");
+      setNewNumber("");
+      setErrorNotification({
+        status: "success",
+        message: `${newName} was added to the phonebook`,
       });
+    });
+  };
+
+  const updatePerson = (id) => {
+    const personObject = { name: newName, number: newNumber };
+    service.update(personObject, id).then((data) => {
+      if (data.error) {
+        return setErrorNotification({
+          status: "fail",
+          message: `failed to update ${newName}'s number : ${data.error}`,
+        });
+      }
+      const tmpPersons = [...persons];
+      const index = tmpPersons.findIndex((person) => person.id === id);
+      if (index !== -1) {
+        tmpPersons.splice(index, 1, data);
+      }
+
+      setPersons(tmpPersons);
+      setNewName("");
+      setNewNumber("");
+      setErrorNotification({
+        status: "success",
+        message: `${newName}'s number was updated`,
+      });
+    });
   };
 
   const deletePerson = (person) => () => {
-    setErrorMessage(`Deleting ${person.name} ...`);
     const canContinue = window.confirm(`Do you want to remove ${person.name}`);
     if (!canContinue) return;
 
-    service
-      .remove(person.id)
-      .then((data) => {
-        console.log(data);
-        setPersons(persons.filter((item) => item.id != data.id));
-        setErrorMessage({
-          status: "success",
-          message: `${person.name} was deleted`,
-        });
-        setTimeout(() => {
-          setErrorMessage(null);
-        }, 2500);
-      })
-      .catch((error) => {
-        setErrorMessage({
+    service.remove(person.id).then((data) => {
+      if (data.error) {
+        return setErrorNotification({
           status: "fail",
-          message: `failed to delete ${person.name}`,
+          message: `failed to update ${newName}'s number : ${data.error}`,
         });
-        setTimeout(() => {
-          setErrorMessage(null);
-        }, 2500);
+      }
+      setPersons(persons.filter((item) => item.id != data.id));
+      setErrorNotification({
+        status: "success",
+        message: `${person.name} was deleted`,
       });
+    });
   };
 
   useEffect(getPersons, []);

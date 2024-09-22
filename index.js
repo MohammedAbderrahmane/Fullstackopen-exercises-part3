@@ -69,7 +69,7 @@ app.post("/persons", (request, response, next) => {
 
   Person.findOne({ name: newPerson.name })
     .then((result) => {
-      if (result) next({ message: "person arleady exists" });
+      if (result) return next({ message: "person arleady exists" });
       newPerson
         .save()
         .then((result) => response.json(result))
@@ -82,8 +82,12 @@ app.put("/persons/:id", (request, response, next) => {
   const id = request.params.id;
   const person = request.body;
 
-  if (!person.name || !person.number)
-    return next({ message: "name/number of the person is missing !" });
+  console.log(person);
+  if (!person.name || !person.number) {
+    next({ message: "name/number of the person is missing !" });
+    return;
+  }
+
   Person.findByIdAndUpdate(id, person, { new: true })
     .then((result) => {
       response.json(result);
@@ -91,7 +95,7 @@ app.put("/persons/:id", (request, response, next) => {
     .catch((error) => next(error));
 });
 
-app.get("/info", async (request, response) => { 
+app.get("/info", async (request, response) => {
   Person.countDocuments()
     .then((result) => {
       const infoPage = `
@@ -103,9 +107,9 @@ app.get("/info", async (request, response) => {
     .catch((error) => next({ message: error }));
 });
 
-app.use((error, request, response, next) =>
-  response.status(400).send({ error: error.message })
-);
+app.use((error, request, response, next) => {
+  response.status(400).send({ error: error.message });
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
