@@ -1,7 +1,6 @@
 const dotenv = require("dotenv");
 dotenv.config();
 
-const mongoose = require("mongoose");
 const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
@@ -95,7 +94,7 @@ app.put("/persons/:id", (request, response, next) => {
     .catch((error) => next(error));
 });
 
-app.get("/info", async (request, response) => {
+app.get("/info", async (request, response, next) => {
   Person.countDocuments()
     .then((result) => {
       const infoPage = `
@@ -107,7 +106,7 @@ app.get("/info", async (request, response) => {
     .catch((error) => next({ message: error }));
 });
 
-app.use((error, request, response, next) => {
+app.use((error, request, response) => {
   response.status(400).send({ error: error.message });
 });
 

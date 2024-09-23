@@ -4,10 +4,10 @@
   "main": "index.js",
   "scripts": {
     "build": "cd phonebook-ui/ && npm run build && cp -r dist ../",
-    "deploy": "npm run build && npm start",
     "start": "node index.js",
     "dev": "nodemon index.js",
     "dev:ui": "rm -r dist  && cd phonebook-ui/ && npm run build && cp -r dist ../ && cd .. && nodemon index.js",
+    "lint": "eslint .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
@@ -20,5 +20,12 @@
     "mongoose": "^8.6.3",
     "morgan": "^1.10.0",
     "nodemon": "^3.1.6"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.11.0",
+    "@stylistic/eslint-plugin-js": "^2.8.0",
+    "eslint": "^9.11.0",
+    "eslint-plugin-react": "^7.36.1",
+    "globals": "^15.9.0"
   }
 }
